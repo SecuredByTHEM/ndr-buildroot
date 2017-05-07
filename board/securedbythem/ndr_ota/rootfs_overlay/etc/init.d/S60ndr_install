@@ -1,11 +1,8 @@
 #!/bin/sh -x
 
-INSTALLATION_DRIVE=/dev/sda
-ETHERNET_DEVICE=enp0s3
+. /etc/image.config
 
-#ROOTFS_LOCATION="https://archive.securedbythem.casadevall.pro/images/rootfs"
-ROOTFS_LOCATION="http://10.0.2.2/"
-ROOTFS_FILE="output.img.bz2"
+#IMAGE_URL="https://archive.securedbythem.casadevall.pro/images/rootfs"
 
 trap cleanup INT
 function cleanup() {
@@ -62,10 +59,9 @@ case "$1" in
 
         run_or_die "mount $PERSISTANT_PART /persistant"
 
-        cd /persistant
         echo "=== Downloading root filesystem ==="
-        run_or_die "curl -O $ROOTFS_LOCATION/$ROOTFS_FILE"
-        run_or_die "bzcat $ROOTFS_FILE | dd of=$ROOT_PART"
+        run_or_die "curl -o /persistant/rootfs.img.bz2 $ROOTFS_IMAGE"
+        run_or_die "bzcat /persistant/rootfs.img.bz2 | dd of=$ROOT_PART"
         sync
         sync
         cd /
@@ -75,7 +71,7 @@ case "$1" in
         run_or_die "mount $ESP_PART /ESP"
         mkdir -p /ESP/EFI/boot/
         cd /ESP/EFI/boot/
-        run_or_die "curl -O $ROOTFS_LOCATION/bootx64.efi"
+        run_or_die "curl -o bootx64.efi $BOOT0_IMAGE"
         cd /
         reboot
         ;;
