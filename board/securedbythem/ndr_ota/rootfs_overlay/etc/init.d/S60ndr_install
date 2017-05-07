@@ -1,0 +1,87 @@
+#!/bin/sh -x
+
+INSTALLATION_DRIVE=/dev/sda
+ETHERNET_DEVICE=enp0s3
+
+#ROOTFS_LOCATION="https://archive.securedbythem.casadevall.pro/images/rootfs"
+ROOTFS_LOCATION="http://10.0.2.2/"
+ROOTFS_FILE="output.img.bz2"
+
+trap cleanup INT
+function cleanup() {
+    echo "=== Cleaning Up ==="
+    exit 1
+}
+
+function run_or_die() {
+    eval $1
+    if [ $? -ne 0 ]; then
+        echo "BAILING OUT: $1 failed"
+        cleanup
+    fi
+}
+
+ESP_PART=/dev/disk/by-partlabel/ndr-esp
+ROOT_PART=/dev/disk/by-partlabel/ndr-rootfs
+PERSISTANT_PART=/dev/disk/by-partlabel/ndr-persistant
+
+case "$1" in
+    start)
+        # Setup Networking
+        run_or_die "udhcpc -i $ETHERNET_DEVICE"
+
+        echo "=== Partitioning $INSTALLATION_DRIVE ==="
+
+        # Partition the drive
+        parted $INSTALLATION_DRIVE --script -- \
+            unit MiB \
+            mklabel gpt \
+            mkpart fat32 1MiB 513MiB \
+            mkpart ext4 513MiB 2561MiB \
+            mkpart ext4 2561MiB -1MiB \
+            set 1 boot on \
+            name 1 ndr-esp \
+            name 2 ndr-rootfs \
+            name 3 ndr-persistant
+
+        partprobe
+
+        # udev race, takes a few moments for it to see the part change
+        echo "=== Waiting for udev to see partition changes ==="
+        sleep 15
+
+        # Format partitions
+        run_or_die "mkfs.ext4 -F $ROOT_PART"
+        run_or_die "mkfs.ext4 -F $PERSISTANT_PART"
+        run_or_die "mkfs.vfat -F32 $ESP_PART"
+
+        # Make some temporary folders and mount stuff
+        mkdir /ESP
+        mkdir /persistant
+        mkdir /rootfs
+
+        run_or_die "mount $PERSISTANT_PART /persistant"
+
+        cd /persistant
+        echo "=== Downloading root filesystem ==="
+        run_or_die "curl -O $ROOTFS_LOCATION/$ROOTFS_FILE"
+        run_or_die "bzcat $ROOTFS_FILE | dd of=$ROOT_PART"
+        sync
+        sync
+        cd /
+        run_or_die "umount /persistant"
+
+        echo "=== Installing bootx64.efi ==="
+        run_or_die "mount $ESP_PART /ESP"
+        mkdir -p /ESP/EFI/boot/
+        cd /ESP/EFI/boot/
+        run_or_die "curl -O $ROOTFS_LOCATION/bootx64.efi"
+        cd /
+        reboot
+        ;;
+    *)
+        echo "Usage: $0 {start}"
+        exit 1
+        ;;
+
+esac
