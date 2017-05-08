@@ -72,7 +72,10 @@ case "$1" in
         mkdir -p /ESP/EFI/boot/
         cd /ESP/EFI/boot/
         run_or_die "curl -o bootx64.efi $BOOT0_IMAGE"
+        run_or_die "curl -o boot1.efi $BOOT1_IMAGE"
+        run_or_die "curl -o boot_ota.efi $BOOT_OTA_IMAGE"
         cd /
+	umount /ESP
         reboot
         ;;
     *)
