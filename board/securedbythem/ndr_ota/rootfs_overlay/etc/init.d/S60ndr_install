@@ -3,6 +3,7 @@
 . /etc/image.config
 
 #IMAGE_URL="https://archive.securedbythem.casadevall.pro/images/rootfs"
+HOSTNAME=otatest
 
 trap cleanup INT
 function cleanup() {
@@ -59,6 +60,19 @@ case "$1" in
 
         run_or_die "mount $PERSISTANT_PART /persistant"
 
+        mkdir -p /persistant/etc
+        if [ ! -e "/persistant/etc/hostname" ]; then
+            echo "$HOSTNAME" > /persistant/etc/hostname;
+        fi
+
+        if [ ! -e "/persistant/etc/hosts" ]; then
+            echo "127.0.0.1 localhost" > /persistant/etc/hosts;
+            echo "127.0.1.1 $HOSTNAME" >> /persistant/etc/hosts;
+            echo "::1 localhost" >> /persistant/etc/hosts;
+        fi
+
+        # Configure the hosts and hostname files if they're MIA
+
         echo "=== Downloading root filesystem ==="
         run_or_die "curl -o /persistant/rootfs.img.bz2 $ROOTFS_IMAGE"
         run_or_die "bzcat /persistant/rootfs.img.bz2 | dd of=$ROOT_PART"
@@ -72,10 +86,8 @@ case "$1" in
         mkdir -p /ESP/EFI/boot/
         cd /ESP/EFI/boot/
         run_or_die "curl -o bootx64.efi $BOOT0_IMAGE"
-        run_or_die "curl -o boot1.efi $BOOT1_IMAGE"
-        run_or_die "curl -o boot_ota.efi $BOOT_OTA_IMAGE"
         cd /
-	umount /ESP
+	    umount /ESP
         reboot
         ;;
     *)
