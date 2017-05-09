@@ -27,6 +27,6 @@ udevadm trigger --type=devices --action=add
 udevadm settle --timeout=30 || echo "udevadm settle failed"
 
 echo "Switching to rootfs"
-mount -o ro /dev/disk/by-partlabel/ndr-esp /root
-kexec -l /root/EFI/boot/boot1.efi
-exec kexec -e
+mount -o ro /dev/disk/by-partlabel/ndr-rootfs /root
+mount -o noatime,nodev,nosuid,noexec /dev/disk/by-partlabel/ndr-persistant /root/persistant
+exec switch_root /root /sbin/init
