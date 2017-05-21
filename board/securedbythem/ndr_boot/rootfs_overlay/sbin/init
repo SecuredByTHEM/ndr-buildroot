@@ -28,7 +28,8 @@ udevadm settle --timeout=30 || echo "udevadm settle failed"
 
 echo "Switching to rootfs"
 . /root.hash
-veritysetup create ndr-dm-rootfs /dev/disk/by-partlabel/ndr-rootfs ./hash.block $ROOT_HASH
-mount -o ro /dev/mapper/ndr-dm-rootfs /root
+#veritysetup create ndr-dm-rootfs /dev/disk/by-partlabel/ndr-rootfs ./hash.block $ROOT_HASH
+#mount -o ro /dev/mapper/ndr-dm-rootfs /root
+mount -o rw /dev/mapper/ndr-rootfs /root
 mount -o noatime,nodev,nosuid,noexec /dev/disk/by-partlabel/ndr-persistant /root/persistant
 exec switch_root /root /sbin/init
