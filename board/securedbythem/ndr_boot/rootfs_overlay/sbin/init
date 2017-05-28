@@ -33,6 +33,9 @@ udevadm settle --timeout=30 || echo "udevadm settle failed"
 mkdir /persistant
 mount -o noatime,nodev,nosuid,noexec /dev/disk/by-partlabel/ndr-persistant /persistant
 
+mount -t proc none /proc
+mount -t sysfs none /sys
+
 function run_ota() {
     # We attempt to OTA on each boot to see if there's a new root filesystem or similar
     #
@@ -42,6 +45,8 @@ function run_ota() {
     # if the image is newer or older
 
     udhcpc -i $ETHERNET_DEVICE
+    ntpdate time.nist.gov
+
     if [ $? -ne 0 ]; then
         echo "OTA BAILING OUT: udhcpc failed"
         return
@@ -95,18 +100,21 @@ function run_ota() {
     sync
     
     # Debug check
-    sleep 15
-
-    reboot
+    exec reboot
 }
 
 echo "Running OTA Process"
 run_ota
-sleep 15
 
 echo "Switching to rootfs"
 . /root.hash
 veritysetup create ndr-dm-rootfs /dev/disk/by-partlabel/ndr-rootfs ./hash.block $ROOT_HASH
+
+if [ $? -ne 0 ]; then
+    echo "Verity verification FAILED! Forcing OTA"
+    CURRENT_IMAGE_BUILDTIME=0
+    run_ota
+fi
 
 mkdir /rootfs
 mount -o ro,noatime /dev/mapper/ndr-dm-rootfs /rootfs
