@@ -19,10 +19,6 @@ function run_or_die() {
     fi
 }
 
-ESP_PART=/dev/disk/by-partlabel/ndr-esp
-ROOT_PART=/dev/disk/by-partlabel/ndr-rootfs
-PERSISTANT_PART=/dev/disk/by-partlabel/ndr-persistant
-
 case "$1" in
     start)
         # Setup Networking

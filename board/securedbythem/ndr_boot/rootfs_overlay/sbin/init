@@ -15,6 +15,10 @@ test -x $UDEV_BIN || exit 5
 
 clear
 
+# Load in our brain
+. /etc/image.config
+. /build.time
+
 # Check for config file and read it
 UDEV_CONFIG=/etc/udev/udev.conf
 test -r $UDEV_CONFIG || exit 6
@@ -26,10 +30,87 @@ udevadm trigger --type=subsystems --action=add
 udevadm trigger --type=devices --action=add
 udevadm settle --timeout=30 || echo "udevadm settle failed"
 
+mkdir /persistant
+mount -o noatime,nodev,nosuid,noexec /dev/disk/by-partlabel/ndr-persistant /persistant
+
+function run_ota() {
+    # We attempt to OTA on each boot to see if there's a new root filesystem or similar
+    #
+    # Although Secure Boot will prevent us from starting a kernel that is unsigned, it
+    # would prevent the system from booting. As such we'll download a signed message
+    # with a manifest (and possibly other commands) that have variables that tell us
+    # if the image is newer or older
+
+    udhcpc -i $ETHERNET_DEVICE
+    if [ $? -ne 0 ]; then
+        echo "OTA BAILING OUT: udhcpc failed"
+        return
+    fi
+
+    # Download the OTA runner
+    curl -o /persistant/ota.manifest $OTA_MANIFEST
+    if [ $? -ne 0 ]; then
+        echo "curl failed to download manfiest, bailing out"
+        return
+    fi
+
+    # FIXME: This is where OpenSSL verification needs to happen
+    . /persistant/ota.manifest
+
+    if [ $CURRENT_IMAGE_BUILDTIME -ge $UPDATE_IMAGE_BUILDTIME ]; then
+        echo "Existing image $CURRENT_IMAGE_BUILDTIME is up-to-date."
+        return
+    fi
+
+    echo "Updating to $UPDATE_IMAGE_BUILDTIME"
+    mkdir -p /persistant/ota
+    curl -o /persistant/ota/rootfs.img.bz2 $ROOTFS_IMAGE
+    if [ $? -ne 0 ]; then
+        echo "Failed to download rootfs. Bailing out of OTA"
+        return
+    fi
+
+    curl -o /persistant/ota/bootx64.efi $BOOT0_IMAGE
+    if [ $? -ne 0 ]; then
+        echo "Failed to download updated kernel. Bailing out of OTA"
+        return
+    fi
+
+    # FIXME: Check hashes here
+    mkdir /ESP
+    mount $ESP_PART /ESP
+
+    if [ $? -ne 0 ]; then
+        echo "Failed to mount ESP partition. Bailing out"
+        return
+    fi
+
+    cp /persistant/ota/bootx64.efi /ESP/EFI/boot/
+    umount /ESP
+    echo "Installed updated kernel"
+
+    echo "Writing root partition"
+    bzcat /persistant/ota/rootfs.img.bz2 | dd of=$ROOT_PART
+    echo "Ready to reboot"
+    sync
+    
+    # Debug check
+    sleep 15
+
+    reboot
+}
+
+echo "Running OTA Process"
+run_ota
+sleep 15
+
 echo "Switching to rootfs"
 . /root.hash
-#veritysetup create ndr-dm-rootfs /dev/disk/by-partlabel/ndr-rootfs ./hash.block $ROOT_HASH
-#mount -o ro /dev/mapper/ndr-dm-rootfs /root
-mount -o rw /dev/disk/by-partlabel/ndr-rootfs /root
-mount -o noatime,nodev,nosuid,noexec /dev/disk/by-partlabel/ndr-persistant /root/persistant
+veritysetup create ndr-dm-rootfs /dev/disk/by-partlabel/ndr-rootfs ./hash.block $ROOT_HASH
+
+mkdir /rootfs
+mount -o ro,noatime /dev/mapper/ndr-dm-rootfs /rootfs
+
+mkdir -p /persistant/overlay
+mount -t aufs -o noatime,br=/persistant/overlay=rw:/rootfs=ro none /root
 exec switch_root /root /sbin/init
