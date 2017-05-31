@@ -31,7 +31,8 @@ udevadm trigger --type=devices --action=add
 udevadm settle --timeout=30 || echo "udevadm settle failed"
 
 mkdir /persistant
-mount -o noatime,nodev,nosuid,noexec /dev/disk/by-partlabel/ndr-persistant /persistant
+#mount -o noatime,nodev,nosuid,noexec /dev/disk/by-partlabel/ndr-persistant /persistant
+mount -o noatime /dev/disk/by-partlabel/ndr-persistant /persistant
 
 mount -t proc none /proc
 mount -t sysfs none /sys
@@ -53,14 +54,14 @@ function run_ota() {
     fi
 
     # Download the OTA runner
-    curl -o /persistant/ota.manifest $OTA_MANIFEST
+    curl -o /persistant/ota.timestamp $OTA_TIMESTAMP
     if [ $? -ne 0 ]; then
         echo "curl failed to download manfiest, bailing out"
         return
     fi
 
     # FIXME: This is where OpenSSL verification needs to happen
-    . /persistant/ota.manifest
+    UPDATE_IMAGE_BUILDTIME=`cat /persistant/ota.timestamp`
 
     if [ $CURRENT_IMAGE_BUILDTIME -ge $UPDATE_IMAGE_BUILDTIME ]; then
         echo "Existing image $CURRENT_IMAGE_BUILDTIME is up-to-date."
@@ -99,7 +100,10 @@ function run_ota() {
     echo "Ready to reboot"
     sync
     
-    # Debug check
+    # So for reasons I can't figure out, reboot doesn't work when PID 1 is a shell script
+    # so we're going to intentionally cause a kernel panic by killing init, and wait for
+    # kernel panic reboot handler to reboot us. Yay for voodoo.
+
     exec reboot
 }
 
