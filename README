@@ -1,8 +1,6 @@
 NDR Notes:
-To build the preboot image:
-
-make ndr_defconfig
-make
+This part has to be built by mkimage.sh as some files have to be generated
+as part of the root filesystem. See that repo for more information
 
 Follow the buildroot documentation for doing other things.
 ---
