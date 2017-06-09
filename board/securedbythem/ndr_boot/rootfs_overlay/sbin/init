@@ -37,6 +37,9 @@ mount -o noatime /dev/disk/by-partlabel/ndr-persistant /persistant
 mount -t proc none /proc
 mount -t sysfs none /sys
 
+# Load the network configuration
+ndr-network-apply
+
 function run_ota() {
     # We attempt to OTA on each boot to see if there's a new root filesystem or similar
     #
@@ -45,7 +48,7 @@ function run_ota() {
     # with a manifest (and possibly other commands) that have variables that tell us
     # if the image is newer or older
 
-    udhcpc -i $ETHERNET_DEVICE
+    #udhcpc -i $ETHERNET_DEVICE
     ntpdate time.nist.gov
 
     if [ $? -ne 0 ]; then
@@ -99,7 +102,7 @@ function run_ota() {
     bzcat /persistant/ota/rootfs.img.bz2 | dd of=$ROOT_PART
     echo "Ready to reboot"
     sync
-    
+
     # So for reasons I can't figure out, reboot doesn't work when PID 1 is a shell script
     # so we're going to intentionally cause a kernel panic by killing init, and wait for
     # kernel panic reboot handler to reboot us. Yay for voodoo.

@@ -1818,4 +1818,8 @@ menu "Text editors and viewers"
 	source "package/vim/Config.in"
 endmenu
 
+menu "Network Data Recorder"
+       source "package/ndr-netcfg/Config.in"
+endmenu
+
 endmenu

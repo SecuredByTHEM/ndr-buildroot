@@ -3,7 +3,9 @@
 . /etc/image.config
 
 #IMAGE_URL="https://archive.securedbythem.casadevall.pro/images/rootfs"
-HOSTNAME=otatest
+
+HOST_RANDOM=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`
+HOSTNAME=ndr-$HOST_RANDOM
 
 trap cleanup INT
 function cleanup() {
@@ -37,7 +39,6 @@ case "$1" in
             name 1 ndr-esp \
             name 2 ndr-rootfs \
             name 3 ndr-persistant
-
         partprobe
 
         # udev race, takes a few moments for it to see the part change
@@ -56,7 +57,9 @@ case "$1" in
 
         run_or_die "mount $PERSISTANT_PART /persistant"
 
-        mkdir -p /persistant/etc
+        # Create the ndr directory for storing the network configuration
+
+        mkdir -p /persistant/etc/ndr
         if [ ! -e "/persistant/etc/hostname" ]; then
             echo "$HOSTNAME" > /persistant/etc/hostname;
         fi

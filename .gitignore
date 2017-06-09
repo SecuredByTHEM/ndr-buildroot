@@ -13,3 +13,10 @@
 *.rej
 *~
 *.pyc
+
+# SBT Ignore Files
+images
+board/securedbythem/ndr_boot/rootfs_overlay/build.time
+board/securedbythem/ndr_boot/rootfs_overlay/hash.block
+board/securedbythem/ndr_boot/rootfs_overlay/root.hash
+

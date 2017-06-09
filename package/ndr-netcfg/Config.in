@@ -1,0 +1,5 @@
+config BR2_PACKAGE_NDR_NETCFG
+	bool "ndr-netcfg"
+	help
+	  NDR network configuration tool
+
