@@ -24,7 +24,8 @@ function run_or_die() {
 case "$1" in
     start)
         # Setup Networking
-        run_or_die "udhcpc -i $ETHERNET_DEVICE"
+        #run_or_die "udhcpc -i $ETHERNET_DEVICE"
+	run_or_die "dhcpcd -w --oneshot"
 
         echo "=== Partitioning $INSTALLATION_DRIVE ==="
 
