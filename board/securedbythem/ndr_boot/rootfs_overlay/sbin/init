@@ -37,6 +37,9 @@ mount -o noatime /dev/disk/by-partlabel/ndr-persistant /persistant
 mount -t proc none /proc
 mount -t sysfs none /sys
 
+# DHCPCD has some issues with setting resolv.conf. Set DNS to Google for now
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+
 # Load the network configuration
 ndr-network-apply --oneshot
 

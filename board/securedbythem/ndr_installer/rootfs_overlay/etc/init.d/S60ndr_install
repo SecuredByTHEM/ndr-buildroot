@@ -7,6 +7,10 @@
 HOST_RANDOM=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`
 HOSTNAME=ndr-$HOST_RANDOM
 
+# dhcpd has some issues with nameservers on early boot, just hardcode in
+# Google DNS for now
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+
 trap cleanup INT
 function cleanup() {
     echo "=== Cleaning Up ==="
