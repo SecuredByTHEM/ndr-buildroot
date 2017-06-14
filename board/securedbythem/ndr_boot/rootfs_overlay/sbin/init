@@ -40,6 +40,9 @@ mount -t sysfs none /sys
 # DHCPCD has some issues with setting resolv.conf. Set DNS to Google for now
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 
+# Set the path so dhcpcd can be found
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
 # Load the network configuration
 ndr-network-apply --oneshot
 
