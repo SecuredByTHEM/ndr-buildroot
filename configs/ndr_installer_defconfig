@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Buildroot 2017.02.1-g9ce8067-dirty Configuration
+# Buildroot 2017.02.1-g2fa3533b9 Configuration
 #
 BR2_HAVE_DOT_CONFIG=y
 BR2_HOST_GCC_AT_LEAST_4_5=y
@@ -1643,7 +1643,7 @@ BR2_PACKAGE_QEMU_ARCH_SUPPORTS_TARGET=y
 # BR2_PACKAGE_CUPS is not set
 # BR2_PACKAGE_DANTE is not set
 # BR2_PACKAGE_DARKHTTPD is not set
-# BR2_PACKAGE_DHCPCD is not set
+BR2_PACKAGE_DHCPCD=y
 # BR2_PACKAGE_DHCPDUMP is not set
 # BR2_PACKAGE_DNSMASQ is not set
 # BR2_PACKAGE_DRBD_UTILS is not set
@@ -2074,6 +2074,11 @@ BR2_PACKAGE_JOE_FULL=y
 BR2_PACKAGE_NANO=y
 BR2_PACKAGE_NANO_TINY=y
 # BR2_PACKAGE_UEMACS is not set
+
+#
+# Network Data Recorder
+#
+# BR2_PACKAGE_NDR_NETCFG is not set
 
 #
 # Filesystem images
