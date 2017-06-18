@@ -28,7 +28,7 @@ function run_or_die() {
 case "$1" in
     start)
         # Setup Networking
-        run_or_die "dhcpcd -w --oneshot"
+        run_or_die "dhcpcd -w -D --oneshot"
 
         echo "=== Partitioning Installation Drive ==="
         if [ -e /dev/mmcblk0 ]; then
@@ -73,15 +73,19 @@ case "$1" in
         # Create the ndr directory for storing the network configuration
 
         mkdir -p /persistant/etc/ndr
-        if [ ! -e "/persistant/etc/hostname" ]; then
-            echo "$HOSTNAME" > /persistant/etc/hostname;
-        fi
 
-        if [ ! -e "/persistant/etc/hosts" ]; then
-            echo "127.0.0.1 localhost" > /persistant/etc/hosts;
-            echo "127.0.1.1 $HOSTNAME" >> /persistant/etc/hosts;
-            echo "::1 localhost" >> /persistant/etc/hosts;
-        fi
+        # Handle creation of the hostname setup from the root filesystem
+        echo "$HOSTNAME" > /persistant/etc/hostname;
+
+        echo "127.0.0.1 localhost" > /persistant/etc/hosts;
+        echo "127.0.1.1 $HOSTNAME" >> /persistant/etc/hosts;
+        echo "::1 localhost" >> /persistant/etc/hosts;
+
+        # Copy the DUID from the ramdisk to the root filesystem. This is required to allow DUID to be
+        # persistant from installation to the running system and follow the proper RFC specifications
+        # related to DHCP address handling. We'll have to do magic in boot up to copy this to the right
+        # locations because dhcpcd doesn't allow this location to be overwritten with a command line prompt
+        cp /etc/dhcpcd.duid /persistant/etc/
 
         # Configure the hosts and hostname files if they're MIA
 

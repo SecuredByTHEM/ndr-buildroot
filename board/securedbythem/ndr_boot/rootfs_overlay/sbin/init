@@ -43,6 +43,14 @@ echo "nameserver 8.8.8.8" > /etc/resolv.conf
 # Set the path so dhcpcd can be found
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
+# DUID related stupidity goes here. We need to have the DUID available so that we request the
+# correct type of lease from the DHCP server. Bad things happen if the DUID changes unexpectedly.
+# There is some concern that some really piss poor DHCP servers might choke if given a DUID though
+# but in that case, we can disable DUID in ndr-network-config (which probably needs to be a config 
+# option),or statically configure the recorder.
+
+cp /persistant/etc/dhcpcd.duid /etc
+
 # Load the network configuration
 ndr-network-apply --oneshot
 
