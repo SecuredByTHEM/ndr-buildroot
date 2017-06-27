@@ -137,6 +137,9 @@ if [ $? -ne 0 ]; then
     run_ota
 fi
 
+# Make directories expected by programs running
+mkdir -p /persistant/snort/all-traffic
+
 umount /persistant
 mkdir -p /root/persistant
 mount -o noatime /dev/disk/by-partlabel/ndr-persistant /root/persistant
