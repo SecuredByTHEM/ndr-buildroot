@@ -30,6 +30,8 @@ case "$1" in
         # Setup Networking
         run_or_die "dhcpcd -w -D --oneshot"
 
+        ntpdate time.nist.gov
+
         echo "=== Partitioning Installation Drive ==="
         if [ -e /dev/mmcblk0 ]; then
             INSTALLATION_DRIVE=/dev/mmcblk0
