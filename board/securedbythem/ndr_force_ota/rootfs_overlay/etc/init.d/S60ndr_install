@@ -1,0 +1,75 @@
+#!/bin/sh -x
+
+. /etc/image.config
+
+#IMAGE_URL="https://archive.securedbythem.casadevall.pro/images/rootfs"
+
+HOST_RANDOM=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`
+HOSTNAME=ndr-$HOST_RANDOM
+
+# dhcpd has some issues with nameservers on early boot, just hardcode in
+# Google DNS for now
+
+trap cleanup INT
+function cleanup() {
+    echo "=== Cleaning Up ==="
+    reboot
+}
+
+function run_or_die() {
+    eval $1
+    if [ $? -ne 0 ]; then
+        echo "BAILING OUT: $1 failed"
+        cleanup
+    fi
+}
+
+case "$1" in
+    start)
+        # Setup Networking
+        cp /persistant/etc/dhcpcd.duid /etc/
+        run_or_die "dhcpcd -w -D --oneshot"
+        echo "nameserver 8.8.8.8" > /etc/resolv.conf
+
+        ntpdate time.nist.gov
+
+        # Make some temporary folders and mount stuff
+        mkdir /ESP
+        mkdir /persistant
+        mkdir /rootfs
+
+        run_or_die "mount $PERSISTANT_PART /persistant"
+
+        # Create the ndr directory for storing the network configuration
+
+        mkdir -p /persistant/etc/ndr
+
+        # Copy the DUID from the ramdisk to the root filesystem. This is required to allow DUID to be
+        # persistant from installation to the running system and follow the proper RFC specifications
+        # related to DHCP address handling. We'll have to do magic in boot up to copy this to the right
+        # locations because dhcpcd doesn't allow this location to be overwritten with a command line prompt
+
+
+        echo "=== Downloading root filesystem ==="
+        run_or_die "curl -o /persistant/rootfs.img.bz2 $ROOTFS_IMAGE"
+        run_or_die "bzcat /persistant/rootfs.img.bz2 | dd of=$ROOT_PART"
+        sync
+        sync
+        cd /
+        run_or_die "umount /persistant"
+
+        echo "=== Installing bootx64.efi ==="
+        run_or_die "mount $ESP_PART /ESP"
+        mkdir -p /ESP/EFI/boot/
+        cd /ESP/EFI/boot/
+        run_or_die "curl -o bootx64.efi $BOOT0_IMAGE"
+        cd /
+	    umount /ESP
+        reboot
+        ;;
+    *)
+        echo "Usage: $0 {start}"
+        exit 1
+        ;;
+
+esac
