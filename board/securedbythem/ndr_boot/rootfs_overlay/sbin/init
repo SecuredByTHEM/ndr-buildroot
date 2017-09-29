@@ -71,7 +71,7 @@ function run_ota() {
     fi
 
     # Download the OTA runner
-    curl -o /persistant/ota.timestamp $OTA_TIMESTAMP
+    curl -f -o /persistant/ota.timestamp $OTA_TIMESTAMP
     if [ $? -ne 0 ]; then
         echo "curl failed to download manfiest, bailing out"
         return
@@ -87,13 +87,13 @@ function run_ota() {
 
     echo "Updating to $UPDATE_IMAGE_BUILDTIME"
     mkdir -p /persistant/ota
-    curl -o /persistant/ota/rootfs.img.bz2 $ROOTFS_IMAGE
+    curl -f -o /persistant/ota/rootfs.img.bz2 $ROOTFS_IMAGE
     if [ $? -ne 0 ]; then
         echo "Failed to download rootfs. Bailing out of OTA"
         return
     fi
 
-    curl -o /persistant/ota/bootx64.efi $BOOT0_IMAGE
+    curl -f -o /persistant/ota/bootx64.efi $BOOT0_IMAGE
     if [ $? -ne 0 ]; then
         echo "Failed to download updated kernel. Bailing out of OTA"
         return
@@ -114,6 +114,7 @@ function run_ota() {
 
     echo "Writing root partition"
     bzcat /persistant/ota/rootfs.img.bz2 | dd of=$ROOT_PART
+
     echo "Ready to reboot"
     sync
 
@@ -139,6 +140,10 @@ fi
 
 # Make directories expected by programs running
 mkdir -p /persistant/snort/all-traffic
+
+# Delete the overlay folder
+echo "Resetting overlay"
+rm -rf /persistant/overlay
 
 umount /persistant
 mkdir -p /root/persistant
