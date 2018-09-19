@@ -142,8 +142,8 @@ fi
 mkdir -p /persistant/snort/all-traffic
 
 # Delete the overlay folder
-echo "Resetting overlay"
-rm -rf /persistant/overlay
+#echo "Resetting overlay"
+#rm -rf /persistant/overlay
 
 umount /persistant
 mkdir -p /root/persistant
